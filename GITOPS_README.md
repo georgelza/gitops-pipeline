@@ -464,7 +464,8 @@ hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 **FIX:**
 
 ```bash
-git add .
+#git add <specify specific file>
+git add GITOPS_README.md
 git commit -m "<comment>"
 git pull origin main
 git config pull.rebase false

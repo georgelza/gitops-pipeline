@@ -43,16 +43,26 @@ def health_check():
 
 ```
 
-requirements.txt
+```bash
+python3 -m venv ./venv
 
+source venv/bin/activate
+
+pip install --upgrade pip
+
+pip install -r requirements
 ```
+
+--requirements
+
+```bash
 fastapi>=0.110.0
 uvicorn>=0.28.0
 ```
 
-Dockerfile
+--Dockerfile
 
-```
+```bash
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
@@ -63,7 +73,7 @@ USER 65534
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-k8s/deployment.yaml
+--k8s/deployment.yaml
 
 (Replace YOUR_DOCKERHUB_USERNAME with your actual Docker Hub username)
 
@@ -117,7 +127,7 @@ spec:
   type: NodePort
 ```
 
-.github/workflows/ci.yml
+--.github/workflows/ci.yml
 
 ```YAML
 name: CI Build and Manifest Update
@@ -222,11 +232,66 @@ kubectl get pods -n argocd -w
 ### Phase 2: Configure Authentication (On GitHub UI)
 
 Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new Read/Write token.
-In your GitHub browser window, open your repository, click Settings -> Secrets and variables -> Actions -> New repository secret.
-Create two secrets matching these keys exactly:
 
-Name: DOCKERHUB_USERNAME | Value: Your Docker Hub user name
-Name: DOCKERHUB_TOKEN | Value: The token string generated above
+Now that you have generated that personal access token (the key) from Docker Hub, you need to save it inside GitHub.
+
+Think of GitHub as the builder that needs keys to enter your warehouse (Docker Hub). If you paste these keys directly into your code, anyone who looks at your repository can steal them. Instead, you put them into GitHub's secure vault called Actions Secrets.
+
+Here is exactly what you do, step-by-step, inside your web browser.
+
+Step 0: Register/Create new repository, for our blog we're using *gitops-pipeline*
+
+Step 1: Open Your Repository's Vault
+
+Open your web browser and go to GitHub.
+
+Navigate to your specific code repository for this project.
+
+Look at the horizontal menu tabs near the top (Code, Issues, Pull Requests...). Click on the Settings tab (it has a gear icon ⚙️).
+
+Step 2: Navigate to Actions Secrets
+
+On the left-hand sidebar, scroll down until you see the *Security and quality*.
+Click on *secrets and variables* and variables to expand it, then click on Actions.
+
+You are now in the secure vault workspace.
+
+Step 3: Add Your Docker Hub Username
+
+Click the green button at the Right/middle that says *New repository secret*.
+In the Name field, type exactly this:  DOCKERHUB_USERNAME
+
+In the Secret field, type your actual Docker Hub username (the name you use to log into hub.docker.com).
+Click the green Add secret button.
+
+Step 4: Add Your Docker Hub Key (The Token)
+
+Click that green *New repository secret* button one more time.
+
+In the Name field, type exactly this: DOCKERHUB_TOKEN
+
+In the Secret field, paste the complete personal access token string you copied from Docker Hub.
+
+Click the green Add secret button.
+
+What Did We Just Accomplish?
+
+By doing this, you have securely wired the two platforms together without hardcoding sensitive details.
+
+When you push your code, the GitHub-hosted runner spins up and runs the automated blueprint file (.github/workflows/ci.yml). When it reaches these lines:
+
+```yaml
+- name: Log in to Docker Hub
+  uses: docker/login-action@v3
+  with:
+    username: ${{ secrets.DOCKERHUB_USERNAME }}
+    password: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+
+The runner automatically reaches into the secure vault, grabs your username and token on the fly, logs into Docker Hub, pushes your compiled Python container, and vanishes—keeping your credentials entirely secure.
+
+Now that these secrets are saved, you are ready to commit and push your files from your local workstation to trigger the initial container build.
+
 
 ### Phase 3: Provision the Runner & Push Baseline (From Workstation)
 

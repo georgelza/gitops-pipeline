@@ -41,14 +41,14 @@ jobs:
 
     - name: Update Manifest Image Tag
       run: |
-        # Fixed path to point precisely to deployment.yml
-        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yml
+        # Removed 'k8s/' because deployment.yml sits at your repository root
+        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" deployment.yml
         
         # Configure a Git Identity
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         
-        # Fixed path to match your exact file extension
-        git add k8s/deployment.yml
+        # Track and commit the file from the root path
+        git add deployment.yml
         git commit -m "chore: auto-update deployment image tag to ${{ github.sha }} [skip ci]"
         git push

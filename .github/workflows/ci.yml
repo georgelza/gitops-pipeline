@@ -33,12 +33,14 @@ jobs:
       with:
         context: .
         push: true
+        # Instructs Buildx to compile for both standard x86 and ARM servers
+        platforms: linux/amd64,linux/arm64
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
+        
     - name: Update Manifest Image Tag
       run: |
         # 1. Target the file inside your k8s/ folder matching your exact .yml extension

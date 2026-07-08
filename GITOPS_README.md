@@ -437,3 +437,36 @@ GitHub Runner Compiles: The GitHub Actions workflow detects the code changes, bu
 GitHub Runner Patches Git: The runner overwrites the image: tag inside k8s/deployment.yaml with the new Git SHA and commits it back to the repository.
 
 ArgoCD Detects and Pulls: ArgoCD notices the updated manifest in Git, pulls down the new declaration, and coordinates a safe, zero-downtime rolling deployment upgrade within your cluster's app namespace.
+
+
+### NOTE:
+
+Because we're working on our project lcoally and Github actions is also modifying our k8s/deployment.yml you will be getting the below error stack after a:
+
+```bash
+git add .
+git commit -m "<comment>"
+git push
+```
+Results in:
+
+```
+To https://github.com/georgelza/gitops-pipeline.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/georgelza/gitops-pipeline.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+```
+
+**FIX:**
+
+```bash
+git add .
+git commit -m "<comment>"
+git pull origin main
+git config pull.rebase false
+git push origin main
+```

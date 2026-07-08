@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'k8s/**' # Crucial: Skip building a new container when YAMLs change
+      - 'deployment.yml' # <-- Updated from 'k8s/**'
 
 jobs:
   build-and-patch:

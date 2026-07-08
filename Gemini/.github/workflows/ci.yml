@@ -42,13 +42,13 @@ jobs:
     - name: Update Manifest Image Tag
       run: |
         # Locate the image line and replace the placeholder/old tag with the current Git commit SHA
-        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yaml
+        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yml
         
         # Configure a Git Identity
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         
         # Commit and push changes back to the main branch
-        git add k8s/deployment.yaml
+        git add k8s/deployment.yml
         git commit -m "chore: auto-update deployment image tag to ${{ github.sha }} [skip ci]"
         git push

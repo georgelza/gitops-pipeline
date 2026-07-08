@@ -21,7 +21,7 @@ Create this exact layout on your local workstation before creating the configura
 
 2. Source Configuration Blueprints
 
-app.py
+- app.py
 
 ```Python
 import os
@@ -236,7 +236,7 @@ kubectl get pods -n argocd -w
 
 ### Phase 2: Configure Authentication (On GitHub UI)
 
-Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new ** Read/Write** token.
+Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new **Read/Write** token.
 
 Now that you have generated that personal access token (the key) from Docker Hub, you need to save it inside GitHub.
 
@@ -244,46 +244,50 @@ Think of GitHub as the builder that needs keys to enter your warehouse (Docker H
 
 Here is exactly what you do, step-by-step, inside your web browser.
 
-Step 0: Register/Create new repository, for our blog we're using *gitops-pipeline*
+- Step 0: Register/Create new repository, for our blog we're using *gitops-pipeline*
 
-Step 1: Open Your Repository's Vault
+- Step 1: Open Your Repository's Vault
 
-Open your web browser and go to GitHub.
+  - Open your web browser and go to GitHub.
 
-Navigate to your specific code repository for this project.
+  - Navigate to your specific code repository for this project.
 
-Look at the horizontal menu tabs near the top (Code, Issues, Pull Requests...). Click on the Settings tab (it has a gear icon ⚙️).
+  - Look at the horizontal menu tabs near the top (Code, Issues, Pull Requests...). Click on the Settings tab (it has a gear icon ⚙️).
 
-Step 2: Navigate to Actions Secrets
+- Step 2: Navigate to Actions Secrets
 
-On the left-hand sidebar, scroll down until you see the *Security and quality*.
-Click on *secrets and variables* and variables to expand it, then click on Actions.
+  - On the left-hand sidebar, scroll down until you see the *Security and quality*.
+  
+  - Click on *secrets and variables* and variables to expand it, then click on Actions.
 
 You are now in the secure vault workspace.
 
-Step 3: Add Your Docker Hub Username
+- Step 3: Add Your Docker Hub Username
 
-Click the green button at the Right/middle that says *New repository secret*.
-In the Name field, type exactly this:  DOCKERHUB_USERNAME
+  - Click the green button at the Right/middle that says *New repository secret*.
+  
+  - In the Name field, type exactly this:  DOCKERHUB_USERNAME
 
-In the Secret field, type your actual Docker Hub username (the name you use to log into hub.docker.com).
-Click the green Add secret button.
+  - In the Secret field, type your actual Docker Hub username (the name you use to log into hub.docker.com).
 
-Step 4: Add Your Docker Hub Key (The Token)
+  - Click the green Add secret button.
 
-Click that green *New repository secret* button one more time.
+- Step 4: Add Your Docker Hub Key (The Token)
 
-In the Name field, type exactly this: DOCKERHUB_TOKEN
+  - Click that green *New repository secret* button one more time.
 
-In the Secret field, paste the complete personal access token string you copied from Docker Hub.
+  - In the Name field, type exactly this: DOCKERHUB_TOKEN
 
-Click the green Add secret button.
+  - In the Secret field, paste the complete personal access token string you copied from Docker Hub.
+
+  - Click the green Add secret button.
+
 
 What Did We Just Accomplish?
 
 By doing this, you have securely wired the two platforms together without hardcoding sensitive details.
 
-When you push your code, the GitHub-hosted runner spins up and runs the automated blueprint file (.github/workflows/ci.yml). When it reaches these lines:
+When you push your code, the GitHub-hosted runner spins up and runs the automated blueprint file (*.github/workflows/ci.yml*). When it reaches these lines:
 
 ```yaml
 - name: Log in to Docker Hub
@@ -308,7 +312,7 @@ git commit -m "ci: establish core framework baseline"
 git push origin main
 ```
 
-⏳ Pause Strategy: Open your GitHub repository web browser interface and click on the Actions tab. Wait until the active runner job executes completely and displays a green checkmark. If you inspect your k8s/deployment.yaml file in the GitHub UI, you will see that the text :placeholder has been updated to your long Git commit SHA string.
+⏳ Pause Strategy: Open your GitHub repository web browser interface and click on the Actions tab. Wait until the active runner job executes completely and displays a green checkmark. If you inspect your *k8s/deployment.yaml* file in the GitHub UI, you will see that the text :placeholder has been updated to your long Git commit SHA string.
 
 ### Phase 4: Wire the Cluster to Pull Manifests (On Cluster Control Plane)
 
@@ -318,7 +322,7 @@ With the correct image tag committed back to your Git repository, instruct ArgoC
 kubectl apply -f argocd-app.yaml
 ```
 
-ArgoCD instantly reads the k8s/deployment.yaml file from your repository, translates the requirements, handles the target definitions, and sets up your application inside the app namespace.
+ArgoCD instantly reads the *k8s/deployment.yaml* file from your repository, translates the requirements, handles the target definitions, and sets up your application inside the app namespace.
 
 4. Verification
 
@@ -328,17 +332,105 @@ Verify that your application has been safely pulled and initiated within its des
 kubectl get deployments,services,pods -n app -o wide
 ```
 
+```
+NAME                                    READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS    IMAGES                                                                  SELECTOR
+deployment.apps/python-app-deployment   2/2     2            2           30m   fastapi-app   georgelza/python-fastapi-app:b89529def5d346c70f7ef773551cee670ce54e5c   app=python-fastapi
+
+NAME                         TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE   SELECTOR
+service/python-app-service   NodePort   10.99.36.33   <none>        80:30449/TCP   30m   app=python-fastapi
+
+NAME                                        READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+pod/python-app-deployment-8c9cf4c48-8h8s8   1/1     Running   0          19m   10.244.3.4   worker-2   <none>           <none>
+pod/python-app-deployment-8c9cf4c48-r8krk   1/1     Running   0          20m   10.244.4.4   worker-3   <none>           <none>
+```
+
 5. Future Redeploy Action-Trigger Loop
 
 For every future code alteration or deployment update, you do not need to repeat any of the steps above. The automated loops trigger natively when a commit lands:
 
-You push an update to app.py from your local workspace:
+You push an update to *app.py* from your local workspace:
 
 ```Bash
 git add app.py
 git commit -m "feat: upgrade runtime message block"
 git push origin main
 ```
+
+To access your newly deployed FastAPI application from your workstation, you have two clear options based on your NodePort configuration.
+
+- Option 1: Access via NodePort (Direct Cluster Routing)
+
+Your python-app-service manifest correctly configured a NodePort service. Looking at your kubectl get output:
+
+```bash
+service/python-app-service   NodePort   10.99.36.33   <none>   80:30449/TCP
+```
+
+Kubernetes has opened port 30449 across every single physical node in your cluster.
+
+To access the app directly, find the host IP address of any of your cluster nodes (such as the machine hosting worker-2 or worker-3) and navigate to it in your browser on that high port:
+
+```bash
+http://<ANY_CLUSTER_NODE_IP>:30449/
+```
+
+- Option 2: Use a kubectl Port-Forward Tunnel (Recommended for Testing)
+
+If you want to map the cluster application specifically to your workstation's localhost:8000 interface for convenient local testing, you can instruct kubectl to open a secure, bidirectional network tunnel from your desktop straight to the service.
+
+Run this command in a separate terminal window on your workstation:
+
+```bash
+kubectl port-forward svc/python-app-service -n app 8080:80
+```
+
+What this does:
+
+This binds your workstation's local port 8000 directly to the cluster service's incoming port 80.
+Once that command is running, open your web browser and navigate to:
+
+NOW, you may ask, but our app is exposed on port 8000 in the container, see the *Dockefile*, should we not be using this port?
+
+Our configuration is actually completely correct as it stands, and you do not need to change the application's internal container port (8000).
+
+In your Kubernetes manifest, you created a translation layer using the Service definition. Let's look at how the traffic flows:
+
+```yaml
+ports:
+    - protocol: TCP
+      port: 80         # <-- The Service's entry port inside the cluster
+      targetPort: 8000 # <-- The port the Service forwards to inside the container
+```
+Because of this mapping, the Service listens on port 80 inside the cluster network and automatically shifts the traffic to port 8000 inside your Python container.
+
+**Why Option 2** (kubectl port-forward) works with your setup:
+
+When you run a port-forward command, you specify LOCAL_PORT:CLUSTER_SERVICE_PORT. Since your service is listening on port 80, your command should target port 80 like this:
+
+```bash
+kubectl port-forward svc/python-app-service -n app 8080:80
+```
+
+In a new terminal
+
+```bash
+curl -i http://localhost:8080/
+
+HTTP/1.1 200 OK
+date: Wed, 08 Jul 2026 15:03:44 GMT
+server: uvicorn
+content-length: 98
+content-type: application/json
+
+{"status":"healthy","engine":"ArgoCD Pull Model","message":"Hello from a secure GitOps workflow!"}
+```
+
+You can also navigate with you browser to go to 
+- http://localhost:8080/ or 
+- http://localhost:8080/healthz or similarly to 
+- 127.0.0.1:8080/
+- 127.0.0.1:8080/health
+
 
 GitHub Runner Compiles: The GitHub Actions workflow detects the code changes, builds a fresh image tagged with the new Git commit SHA, and pushes it to Docker Hub.
 

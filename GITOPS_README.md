@@ -134,21 +134,22 @@ name: CI Build and Manifest Update
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths-ignore:
-      - 'k8s/**'  # Prevents infinite build loops when updating YAMLs
+      - 'deployment.yml' # <-- Updated from 'k8s/**'
 
 jobs:
   build-and-patch:
-    runs-on: ubuntu-latest  # Configures GitHub to provision the standard compilation runner
+    runs-on: ubuntu-latest
     permissions:
-      contents: write       # Grants the runner authorization to commit changes back to Git
+      contents: write # Allows pushing the updated YAML tag back to Git
 
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Fetches full history for proper Git tracking
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -167,17 +168,21 @@ jobs:
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Update Manifest Image Tag
       run: |
-        # Replaces the text placeholder with the precise Git commit SHA
-        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yaml
+        # 1. Target the file inside your k8s/ folder matching your exact .yml extension
+        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yml
         
-        # Commits the manifest alteration back to the repository
+        # 2. Configure a Git Identity
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add k8s/deployment.yaml
-        git commit -m "chore: auto-update image tag to ${{ github.sha }} [skip ci]"
+        
+        # 3. Track and commit the exact file from the k8s directory path
+        git add k8s/deployment.yml
+        git commit -m "chore: auto-update deployment image tag to ${{ github.sha }} [skip ci]"
         git push
 ```
 
@@ -231,7 +236,7 @@ kubectl get pods -n argocd -w
 
 ### Phase 2: Configure Authentication (On GitHub UI)
 
-Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new Read/Write token.
+Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new ** Read/Write** token.
 
 Now that you have generated that personal access token (the key) from Docker Hub, you need to save it inside GitHub.
 

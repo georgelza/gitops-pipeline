@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fastapi-app
-        image: georgelza/python-fastapi-app:e6456e80ad15e5e27359d121075f830e11ebabd8
+        image: georgelza/python-fastapi-app:1c49b16d3001d5b248860389e6a426615bd8f088
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

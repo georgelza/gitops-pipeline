@@ -1,9 +1,10 @@
+## How to: Deploying GitOps Pipeline on K8S hosted on vCluster 
 
 To get from a bare Kubernetes cluster to a fully automated GitOps pipeline using a pull-based model, we must execute the configurations in a strict, linear progression.
 
 Here is the complete, cohesive roadmap.
 
-1. Directory Structure
+### Directory Structure
 
 Create this exact layout on your local workstation before creating the configuration files:
 
@@ -19,9 +20,11 @@ Create this exact layout on your local workstation before creating the configura
     └── deployment.yaml    # Kubernetes manifests
 ```
 
-2. Source Configuration Blueprints
+### Source Configuration Blueprints
 
-- app.py
+Create the following files in the locations as per above.
+
+--app.py
 
 ```Python
 import os
@@ -43,22 +46,6 @@ def health_check():
 
 ```
 
-```bash
-python3 -m venv ./venv
-
-source venv/bin/activate
-
-pip install --upgrade pip
-
-pip install -r requirements
-```
-
---requirements
-
-```bash
-fastapi>=0.110.0
-uvicorn>=0.28.0
-```
 
 --Dockerfile
 
@@ -73,58 +60,38 @@ USER 65534
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
---k8s/deployment.yaml
+--requirements.txt
 
-(Replace YOUR_DOCKERHUB_USERNAME with your actual Docker Hub username)
+```bash
+fastapi>=0.110.0
+uvicorn>=0.28.0
+```
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
+--argocd-app.yaml
+
+(Replace YOUR_GITHUB_USERNAME and YOUR_REPO_NAME with your repo information)
+
+```YAML
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
-  name: python-app-deployment
-  namespace: app
-  labels:
-    app: python-fastapi
+  name: python-gitops-pipeline
+  namespace: argocd
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: python-fastapi
-  template:
-    metadata:
-      labels:
-        app: python-fastapi
-    spec:
-      containers:
-      - name: fastapi-app
-        image: georgelza/python-fastapi-app:placeholder
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8000
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-          initialDelaySeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-          initialDelaySeconds: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: python-app-service
-  namespace: app
-spec:
-  selector:
-    app: python-fastapi
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8000
-  type: NodePort
+  project: default
+  source:
+    # repoURL: 'https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git'
+    # i.e.:
+    repoURL: 'https://github.com/georgelza/gitops-pipeline.git'
+    targetRevision: main
+    path: k8s
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: app  # Target workload namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
 ```
 
 --.github/workflows/ci.yml
@@ -137,7 +104,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'deployment.yml' # <-- Updated from 'k8s/**'
+      - 'deployment.yml'        # <-- make sure to match .github/workflows/ci.yml
 
 jobs:
   build-and-patch:
@@ -169,7 +136,7 @@ jobs:
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:${{ github.sha }}
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=max     # <-- We're doing a cross platform compile, I work on Apple MAC, github compiles in x86_64
 
     - name: Update Manifest Image Tag
       run: |
@@ -186,57 +153,86 @@ jobs:
         git push
 ```
 
-argocd-app.yaml
+--k8s/deployment.yaml
 
-(Replace YOUR_GITHUB_USERNAME and YOUR_REPO_NAME with your repo information)
+(Replace YOUR_DOCKERHUB_USERNAME with your actual Docker Hub username)
 
-```YAML
-apiVersion: argoproj.io/v1alpha1
-kind: Application
+```yaml
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: python-gitops-pipeline
-  namespace: argocd
+  name: python-app-deployment
+  namespace: app
+  labels:
+    app: python-fastapi
 spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/georgelza/gitops-pipeline.git'
-    targetRevision: main
-    path: k8s
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: app  # Target workload namespace
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-fastapi
+  template:
+    metadata:
+      labels:
+        app: python-fastapi
+    spec:
+      containers:
+      - name: fastapi-app
+        # image: YOUR_DOCKERHUB_USERNAME/YOUR_REPO_NAME:placeholder
+        # i.e.:
+        image: georgelza/python-fastapi-app:placeholder
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-app-service
+  namespace: app
+spec:
+  selector:
+    app: python-fastapi
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: NodePort
 ```
 
-3. End-to-End Execution Checklist
 
-### Phase 1: Cluster Bootstrap & ArgoCD Setup (On Cluster Control Plane)
+### End-to-End Execution Checklist
+
+Phase 1: Cluster Bootstrap & ArgoCD Setup (On Cluster Control Plane)
 
 Execute these commands on your bare-metal cluster terminal using your administrative privileges:
 
 ```Bash
-# 1. Create the engine control plane namespace
-kubectl create namespace argocd
-
-# 2. Deploy stable ArgoCD infrastructure components
-#kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# 1. Deploy stable ArgoCD infrastructure components
 kubectl -n argocd create -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# 3. Create your designated application workload namespace
-kubectl create namespace app
-
-# 4. Block and watch until all operators show "Running"
+# 2. Block and watch until all operators show "Running"
 kubectl get pods -n argocd -w
 ```
 
 (Press Ctrl+C to exit the watch block once all statuses show Running).
 
-### Phase 2: Configure Authentication (On GitHub UI)
+Phase 2: Configure Docker Project and Access (On Docker UI)
 
 Go to your Docker Hub profile, click Account Settings -> Security -> Personal Access Tokens, and generate a new **Read/Write** token.
+
+
+Phase 3: Configure GitHub Authentication (On GitHub UI)
+
 
 Now that you have generated that personal access token (the key) from Docker Hub, you need to save it inside GitHub.
 
@@ -302,7 +298,7 @@ The runner automatically reaches into the secure vault, grabs your username and 
 Now that these secrets are saved, you are ready to commit and push your files from your local workstation to trigger the initial container build.
 
 
-### Phase 3: Provision the Runner & Push Baseline (From Workstation)
+Phase 4: Provision the Runner & Push Baseline (From Workstation)
 
 Now, push your local folder setup to GitHub. This triggers the GitHub-hosted runner to provision its computing workspace, build the image, and output the tracking tag.
 
@@ -314,17 +310,17 @@ git push origin main
 
 ⏳ Pause Strategy: Open your GitHub repository web browser interface and click on the Actions tab. Wait until the active runner job executes completely and displays a green checkmark. If you inspect your *k8s/deployment.yaml* file in the GitHub UI, you will see that the text :placeholder has been updated to your long Git commit SHA string.
 
-### Phase 4: Wire the Cluster to Pull Manifests (On Cluster Control Plane)
+Phase 5: Wire the Cluster to Pull Manifests (On Cluster Control Plane)
 
 With the correct image tag committed back to your Git repository, instruct ArgoCD to monitor the repository and deploy the resources to your targeted namespace. Run this command on your cluster terminal:
 
 ```Bash
-kubectl apply -f argocd-app.yaml
+kubectl apply -f argocd-app.yml
 ```
 
 ArgoCD instantly reads the *k8s/deployment.yaml* file from your repository, translates the requirements, handles the target definitions, and sets up your application inside the app namespace.
 
-4. Verification
+### Verification
 
 Verify that your application has been safely pulled and initiated within its designated workspace:
 

@@ -1,9 +1,0 @@
-.
-├── app.py                  # FastAPI Application source code
-├── Dockerfile              # Docker recipe
-├── requirements.txt        # Python dependencies
-├── .github/
-│   └── workflows/
-│       └── ci.yml          # CI Pipeline (Builds image, updates manifest)
-└── k8s/
-    └── deployment.yaml    # Kubernetes manifests (Deployment & Service)

@@ -24,7 +24,7 @@ BLOG: [Exploring vCluster as solution to running K8S locally inside Docker](???
 
 GIT: [Exploring_vCluster](https://github.com/georgelza/Exploring_vCluster.git)
 
-See `<Projectroot>/my-vc#` for various screen shots during deployment
+See `<Project_root>/my-pipeline` for various screen shots during deployment
 
 
 ## Basic Installation/HOST Preperation
@@ -44,43 +44,20 @@ vcluster use driver docker
 vcluster platform start
 ```
 
-## Creating Our Clusters
+## Creating up Multi Node K8S Cluster on vCluster
 
-## Standing up Single Node K8S Cluster on vCluster
-
-Standing up Single Node Cluster on vCluster, with [Traefik](https://traefik.io/traefik) for Ingress onto a [nGinx](https://nginx.org) container, with persistent storage.
-
-- See README_1.md
-
-<img src="my-vc1/Screenshot 2026-02-18 at 16.19.22.png" alt="Our Build" width="950" height="100">
-
-<img src="my-vc1/Screenshot 2026-02-18 at 16.41.31.png" alt="Our Build" width="950" height="650">
-
-### Standing up Multi Node K8S Cluster on vCluster
-
-Standing up Multi Node Cluster on vCluster, with [Traefik](https://traefik.io/traefik) for Ingress onto a [nGinx](https://nginx.org) container, with persistent storage.
-
-- See README_2.md
+- See BUILD.md
 
 <img src="my-vc2/Screenshot 2026-02-18 at 18.54.56.png" alt="Our Build" width="950" height="650">
 
-<img src="my-vc2/Screenshot 2026-02-19 at 10.37.32.png" alt="Our Build" width="750" height="150">
 
 
-### Deploying MongoDB on Multi Node K8S cluster on vCluster
+## Deploying our GitOps pipeline
 
-Deploying [MongoDB](https://www.mongodb.com) on a K8s cluster on vCluster with persistent storage.
-
-- See README_3.md
-
-<img src="my-vc3/Screenshot 2026-02-19 at 14.21.50.png" alt="Our Build" width="950" height="650">
-
-<img src="my-vc3/Screenshot 2026-02-19 at 14.13.39.png" alt="Our Build" width="950" height="100">
-
-<img src="my-vc3/Screenshot 2026-02-19 at 14.06.32.png" alt="Our Build" width="700" height="125">
+- See GITOPS.md
 
 
-### Misc useful commands
+## Misc useful commands
 
 Should you need to restart you host environment.
 
@@ -99,11 +76,11 @@ or
 
 You can of course also stop/pause a running cluster:
 
-- `vcluster pause my-vc`
+- `vcluster pause my-pipeline`
 
 To apply changes to a previously created cluster.
 
-- `vcluster create --upgrade <cluster-name> -f vcluster_#.yaml`
+- `vcluster create --upgrade <cluster-name> -f vcluster.yml`
 
 Tear Down
   

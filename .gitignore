@@ -21,6 +21,4 @@
 # Local copy of modules and libraries.
 .DS_Store
 
-data/
-infrastructure/
-old/
+venv/

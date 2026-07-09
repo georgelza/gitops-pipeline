@@ -1,4 +1,4 @@
-## How to, the basics for vCluster on Docker with local PV/PVC.
+## How to: Deploying GitOps Pipeline on K8S hosted on vCluster
 
 Welcome to the Rabbit Hole
 

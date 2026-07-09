@@ -8,21 +8,19 @@ What follows is a short'ish introduction to [vCluster](https://github.com/loft-s
 
 [vCluster](https://github.com/loft-sh/vcluster) is capable of allot more... But I figured lets keep it simple at first.
 
-We have 4 README.md files, covering various steps and examples.
+We have various README.md files, covering various steps and examples.
 
 - This file, that detail the installation of [vCluster](https://github.com/loft-sh/vcluster), see below.
 
-- Deploying a basic single node Kubernetes cluster inside vCluster, with [Traefik](https://traefik.io/traefik) for Ingress onto anGinx container.
+- Deploying a basic multi node Kubernetes cluster inside vCluster.
 
-- Deploying a three node Kubernetes cluster inside vCluster, with [Traefik](https://traefik.io/traefik) for Ingress onto anGinx container.
-
-- Deploying MongoDB service on our three node Kubernetes cluster.s
+- Our deployment of our GitOps pipeline.
 
 All the examples will utilise persistent storage mapped into our Kubernetes environment from the host.
 
-BLOG: [Exploring vCluster as solution to running K8S locally inside Docker](???)
+BLOG: [How to: Deploying GitOps Pipeline on K8S hosted on vCluster](???)
 
-GIT: [Exploring_vCluster](https://github.com/georgelza/Exploring_vCluster.git)
+GIT: [gitops-pipeline](https://github.com/georgelza/gitops-pipeline)
 
 See `<Project_root>/my-pipeline` for various screen shots during deployment
 
@@ -48,14 +46,9 @@ vcluster platform start
 
 - See BUILD.md
 
-<img src="my-vc2/Screenshot 2026-02-18 at 18.54.56.png" alt="Our Build" width="950" height="650">
-
-
-
 ## Deploying our GitOps pipeline
 
 - See GITOPS.md
-
 
 ## Misc useful commands
 
@@ -71,7 +64,7 @@ The following is the commands I executed to bring my cluster/s back up after hav
 
 or
 
-`docker restart $(docker ps -q --filter "name=my-vcluster")`
+`docker restart $(docker ps -q --filter "name=my-pipeline")`
 
 
 You can of course also stop/pause a running cluster:

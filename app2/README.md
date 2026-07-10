@@ -257,7 +257,7 @@ Step 4: Verify
 We can now configure a new port-forward as per previous to reach our application
 
 ```bash
-kubectl port-forward svc/python-app2-deployment -n app2-space 9080:80
+kubectl port-forward service/python-app2-service -n app2-space 9080:80
 ```
 
 In a new terminal

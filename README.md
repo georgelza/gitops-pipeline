@@ -60,7 +60,7 @@ The following is the commands I executed to bring my cluster/s back up after hav
 
 - `vcluster platform start`
 
-- `vcluster resume my-vc`
+- `vcluster resume my-pipeline`
 
 or
 

@@ -424,8 +424,8 @@ content-type: application/json
 You can also navigate with you browser to go to 
 - http://localhost:8080/ or 
 - http://localhost:8080/healthz or similarly to 
-- 127.0.0.1:8080/
-- 127.0.0.1:8080/health
+- http://127.0.0.1:8080/
+- http://127.0.0.1:8080/health
 
 
 GitHub Runner Compiles: The GitHub Actions workflow detects the code changes, builds a fresh image tagged with the new Git commit SHA, and pushes it to Docker Hub.

@@ -5,19 +5,19 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'k8s/**'
+      - 'deployment.yml' # <-- Updated from 'k8s/**'
 
 jobs:
   build-and-patch:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Allows pushing the updated YAML tag back to Git
 
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Fetches full history for proper Git tracking
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -28,44 +28,29 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # BUILD APP 1 (Untouched)
-    - name: Build and Push App 1
+    - name: Build and Push Docker Image
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
         push: true
+        # Instructs Buildx to compile for both standard x86 and ARM servers
         platforms: linux/amd64,linux/arm64
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    # BUILD APP 2 (Addition)
-    - name: Build and Push App 2
-      uses: docker/build-push-action@v5
-      with:
-        context: ./app2
-        file: ./app2/Dockerfile
-        push: true
-        platforms: linux/amd64,linux/arm64
-        tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app2:latest
-          ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app2:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    # PATCH BOTH MANIFEST TAGS
-    - name: Update Manifest Image Tags
-      run: |
-        # Patches both app images inside the same k8s/deployment.yml file
-        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yml
-        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app2:).*|\1${{ github.sha }}|" k8s/deployment.yml
         
+    - name: Update Manifest Image Tag
+      run: |
+        # 1. Target the file inside your k8s/ folder matching your exact .yml extension
+        sed -i -E "s|(image: ${{ secrets.DOCKERHUB_USERNAME }}/python-fastapi-app:).*|\1${{ github.sha }}|" k8s/deployment.yml
+        
+        # 2. Configure a Git Identity
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         
+        # 3. Track and commit the exact file from the k8s directory path
         git add k8s/deployment.yml
-        git commit -m "chore: auto-update image tags for app1 and app2 to ${{ github.sha }} [skip ci]"
+        git commit -m "chore: auto-update deployment image tag to ${{ github.sha }} [skip ci]"
         git push

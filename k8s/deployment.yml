@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fastapi-app
-        image: georgelza/python-fastapi-app:54cd0592aa5e0f8a407f8de8032709093d0091e1
+        image: georgelza/python-fastapi-app:8847ab9c4a325412716080608e21e9745a29d759
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -72,7 +72,7 @@ spec:
       containers:
       - name: fastapi-app2
         # The runner will dynamically patch this placeholder just like App 1
-        image: georgelza/python-fastapi-app2:placeholder
+        image: georgelza/python-fastapi-app2:8847ab9c4a325412716080608e21e9745a29d759
         imagePullPolicy: Always
         ports:
         - containerPort: 9000
